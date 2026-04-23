@@ -5,14 +5,26 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isPublicHostUid(hostUid) {
+      return hostUid == "katolik-public";
+    }
+
     function isHost(sessionId) {
       return isSignedIn()
-        && get(/databases/$(database)/documents/sessions/$(sessionId)).data.hostUid == request.auth.uid;
+        && (
+          get(/databases/$(database)/documents/sessions/$(sessionId)).data.hostUid == request.auth.uid
+          || isPublicHostUid(get(/databases/$(database)/documents/sessions/$(sessionId)).data.hostUid)
+        );
     }
 
     match /sessions/{sessionId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.hostUid == request.auth.uid;
+      allow create: if
+        isSignedIn()
+        && (
+          request.resource.data.hostUid == request.auth.uid
+          || isPublicHostUid(request.resource.data.hostUid)
+        );
       allow update, delete: if isHost(sessionId);
 
       match /questions/{questionId} {
@@ -37,4 +49,3 @@ service cloud.firestore {
     }
   }
 }
-

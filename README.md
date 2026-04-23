@@ -93,6 +93,7 @@ src/
 
 **Prowadzący:**
 1. Loguje się przez Firebase Auth (Google)
+   - alternatywnie: `Logowanie przez Katolik` (konto publiczne, bez hasła)
 2. Tworzy pytania (single/multiple/yes-no/survey)
 3. Ustawia aktywne pytanie i otwiera głosowanie
 4. Pokazuje ekran prezentacyjny: tryb QR lub wyniki
@@ -160,7 +161,8 @@ npm run dev
 3. Dodaj wszystkie zmienne z `.env.example` jako Environment Variables.
 4. Build command: `npm run build`
 5. Output: domyślny dla Next.js.
-6. Po deployu ustaw reguły Firestore (`firestore.rules`) w Firebase Console lub przez Firebase CLI.
+6. W Firebase Auth włącz provider **Anonymous** (dla przycisku `Logowanie przez Katolik`).
+7. Po deployu ustaw reguły Firestore (`firestore.rules`) w Firebase Console lub przez Firebase CLI.
 
 ## 10. Propozycje dalszej rozbudowy
 

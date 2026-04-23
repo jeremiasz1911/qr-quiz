@@ -17,6 +17,9 @@ import { getDb, hasFirebaseEnv } from "@/lib/firebase";
 import { generateId, nowTs } from "@/lib/utils";
 import type { PresentationMode, Question, QuestionType, ResultsChartType, Session, Vote } from "@/types/domain";
 
+export const PUBLIC_HOST_UID = "katolik-public";
+export const PUBLIC_SESSION_ID = "katolik-public-session";
+
 export function sessionsCollection() {
   const db = getDb();
   return collection(db, "sessions");
@@ -48,6 +51,36 @@ export async function createSession(hostUid: string, title: string) {
     updatedAtServer: serverTimestamp(),
   });
   return sessionId;
+}
+
+export async function ensurePublicSession(title: string) {
+  const db = getDb();
+  const sessionRef = doc(db, "sessions", PUBLIC_SESSION_ID);
+  const snapshot = await getDoc(sessionRef);
+
+  if (!snapshot.exists()) {
+    await setDoc(sessionRef, {
+      title,
+      hostUid: PUBLIC_HOST_UID,
+      status: "draft",
+      activeQuestionId: null,
+      presentationMode: "qr",
+      resultsChartType: "bar",
+      createdAt: nowTs(),
+      updatedAt: nowTs(),
+      createdAtServer: serverTimestamp(),
+      updatedAtServer: serverTimestamp(),
+    });
+    return PUBLIC_SESSION_ID;
+  }
+
+  await updateDoc(sessionRef, {
+    title,
+    hostUid: PUBLIC_HOST_UID,
+    updatedAt: nowTs(),
+    updatedAtServer: serverTimestamp(),
+  });
+  return PUBLIC_SESSION_ID;
 }
 
 export async function createQuestion(

@@ -15,6 +15,9 @@ import { useSessionData } from "@/hooks/use-session-data";
 import {
   createQuestion,
   createSession,
+  ensurePublicSession,
+  PUBLIC_HOST_UID,
+  PUBLIC_SESSION_ID,
   resetQuestionVotes,
   setActiveQuestion,
   setPresentationMode,
@@ -25,6 +28,7 @@ import { getBaseUrl } from "@/lib/utils";
 import type { ResultsChartType } from "@/types/domain";
 
 const DEFAULT_SESSION_TITLE = "Sesja Live Polling";
+const PUBLIC_SESSION_TITLE = "Konto Katolik - panel ogólnodostępny";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -32,7 +36,8 @@ export default function AdminDashboardPage() {
   const [sessionId, setSessionId] = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem("live-poll-session-id") : null
   );
-  const { session, questions, activeQuestion, votes, results } = useSessionData(sessionId ?? "");
+  const effectiveSessionId = user?.isAnonymous ? PUBLIC_SESSION_ID : sessionId;
+  const { session, questions, activeQuestion, votes, results } = useSessionData(effectiveSessionId ?? "");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -41,10 +46,25 @@ export default function AdminDashboardPage() {
   }, [loading, router, user]);
 
   useEffect(() => {
+    if (!user) {
+      return;
+    }
+    if (!user.isAnonymous) {
+      return;
+    }
+
+    localStorage.setItem("live-poll-session-id", PUBLIC_SESSION_ID);
+    void ensurePublicSession(PUBLIC_SESSION_TITLE);
+  }, [user]);
+
+  useEffect(() => {
     if (sessionId) {
       return;
     }
     if (!user) {
+      return;
+    }
+    if (user.isAnonymous) {
       return;
     }
     void createSession(user.uid, DEFAULT_SESSION_TITLE).then((id) => {
@@ -54,7 +74,14 @@ export default function AdminDashboardPage() {
   }, [sessionId, user]);
 
   useEffect(() => {
-    if (!user || !sessionId || !session) {
+    if (!user || !effectiveSessionId || !session) {
+      return;
+    }
+    if (user.isAnonymous && effectiveSessionId === PUBLIC_SESSION_ID) {
+      if (session.hostUid === PUBLIC_HOST_UID) {
+        return;
+      }
+      void ensurePublicSession(PUBLIC_SESSION_TITLE);
       return;
     }
     if (session.hostUid === user.uid) {
@@ -64,16 +91,16 @@ export default function AdminDashboardPage() {
       setSessionId(id);
       localStorage.setItem("live-poll-session-id", id);
     });
-  }, [session, sessionId, user]);
+  }, [effectiveSessionId, session, user]);
 
   const baseUrl = useMemo(() => getBaseUrl(), []);
   const currentChartType: ResultsChartType = session?.resultsChartType ?? "bar";
   const publicActiveLink = useMemo(() => {
-    if (!sessionId || !activeQuestion) return "";
-    return `${baseUrl}/s/${sessionId}/q/${activeQuestion.id}`;
-  }, [activeQuestion, baseUrl, sessionId]);
+    if (!effectiveSessionId || !activeQuestion) return "";
+    return `${baseUrl}/s/${effectiveSessionId}/q/${activeQuestion.id}`;
+  }, [activeQuestion, baseUrl, effectiveSessionId]);
 
-  if (!user || !sessionId) {
+  if (!user || !effectiveSessionId) {
     return (
       <PageShell className="py-16">
         <p className="text-slate-300">Ładowanie panelu prowadzącego...</p>
@@ -90,10 +117,10 @@ export default function AdminDashboardPage() {
             <p className="text-sm text-slate-300">Sesja: {session?.title ?? DEFAULT_SESSION_TITLE}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => void setPresentationMode(sessionId, "qr")}>
+            <Button variant="secondary" onClick={() => void setPresentationMode(effectiveSessionId, "qr")}>
               Tryb QR
             </Button>
-            <Button variant="secondary" onClick={() => void setPresentationMode(sessionId, "results")}>
+            <Button variant="secondary" onClick={() => void setPresentationMode(effectiveSessionId, "results")}>
               Tryb wyników
             </Button>
             <Button variant="ghost" onClick={() => void logout()}>
@@ -113,13 +140,13 @@ export default function AdminDashboardPage() {
               { value: "donut", label: "Donut" },
               { value: "histogram", label: "Histogram %" },
             ].map((item) => (
-              <Button
-                key={item.value}
-                variant={currentChartType === item.value ? "default" : "secondary"}
-                onClick={() => void setResultsChartType(sessionId, item.value as ResultsChartType)}
-              >
-                {item.label}
-              </Button>
+                <Button
+                  key={item.value}
+                  variant={currentChartType === item.value ? "default" : "secondary"}
+                  onClick={() => void setResultsChartType(effectiveSessionId, item.value as ResultsChartType)}
+                >
+                  {item.label}
+                </Button>
             ))}
           </div>
         </Card>
@@ -128,7 +155,7 @@ export default function AdminDashboardPage() {
           <div className="lg:col-span-2">
             <QuestionForm
               onCreate={async (values) => {
-                await createQuestion(sessionId, values);
+                await createQuestion(effectiveSessionId, values);
               }}
             />
           </div>
@@ -147,17 +174,20 @@ export default function AdminDashboardPage() {
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       variant="secondary"
-                      onClick={() => void setQuestionVotingStatus(sessionId, activeQuestion.id, "open")}
+                      onClick={() => void setQuestionVotingStatus(effectiveSessionId, activeQuestion.id, "open")}
                     >
                       Otwórz
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => void setQuestionVotingStatus(sessionId, activeQuestion.id, "closed")}
+                      onClick={() => void setQuestionVotingStatus(effectiveSessionId, activeQuestion.id, "closed")}
                     >
                       Zamknij
                     </Button>
-                    <Button variant="destructive" onClick={() => void resetQuestionVotes(sessionId, activeQuestion.id)}>
+                    <Button
+                      variant="destructive"
+                      onClick={() => void resetQuestionVotes(effectiveSessionId, activeQuestion.id)}
+                    >
                       Reset wyników
                     </Button>
                   </div>
@@ -168,19 +198,19 @@ export default function AdminDashboardPage() {
             </Card>
 
             <Card className="flex flex-wrap gap-2 p-5">
-              <Link href={`/s/${sessionId}/present`} className="inline-flex">
+              <Link href={`/s/${effectiveSessionId}/present`} className="inline-flex">
                 <Button>
                   <MonitorPlay className="mr-2 h-4 w-4" />
                   Ekran prezentacyjny
                 </Button>
               </Link>
-              <Link href={`/s/${sessionId}/vote`} className="inline-flex">
+              <Link href={`/s/${effectiveSessionId}/vote`} className="inline-flex">
                 <Button variant="secondary">
                   Widok uczestnika
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link href={`/s/${sessionId}/history`} className="inline-flex">
+              <Link href={`/s/${effectiveSessionId}/history`} className="inline-flex">
                 <Button variant="ghost">Historia sesji</Button>
               </Link>
               <p className="w-full pt-2 text-sm text-slate-300">
@@ -192,9 +222,9 @@ export default function AdminDashboardPage() {
             <QuestionList
               questions={questions}
               activeQuestionId={session?.activeQuestionId ?? null}
-              onActivate={async (questionId) => setActiveQuestion(sessionId, questionId)}
-              onOpenClose={async (questionId, status) => setQuestionVotingStatus(sessionId, questionId, status)}
-              onResetVotes={async (questionId) => resetQuestionVotes(sessionId, questionId)}
+              onActivate={async (questionId) => setActiveQuestion(effectiveSessionId, questionId)}
+              onOpenClose={async (questionId, status) => setQuestionVotingStatus(effectiveSessionId, questionId, status)}
+              onResetVotes={async (questionId) => resetQuestionVotes(effectiveSessionId, questionId)}
             />
           </div>
         </div>
