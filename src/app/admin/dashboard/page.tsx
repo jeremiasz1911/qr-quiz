@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FirebaseError } from "firebase/app";
 import { ExternalLink, LogOut, MonitorPlay } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { FirebaseEnvGuard } from "@/components/layout/firebase-env-guard";
@@ -162,7 +163,17 @@ export default function AdminDashboardPage() {
           <div className="lg:col-span-2">
             <QuestionForm
               onCreate={async (values) => {
-                await createQuestion(effectiveSessionId, values);
+                try {
+                  await createQuestion(effectiveSessionId, values);
+                } catch (error) {
+                  if (!(error instanceof FirebaseError) || error.code !== "permission-denied" || user.isAnonymous) {
+                    throw error;
+                  }
+                  const newSessionId = await createSession(user.uid, DEFAULT_SESSION_TITLE);
+                  setSessionId(newSessionId);
+                  localStorage.setItem("live-poll-session-id", newSessionId);
+                  await createQuestion(newSessionId, values);
+                }
               }}
             />
           </div>
