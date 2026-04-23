@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isHost(sessionId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/sessions/$(sessionId)).data.hostUid == request.auth.uid;
+    }
+
+    match /sessions/{sessionId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.hostUid == request.auth.uid;
+      allow update, delete: if isHost(sessionId);
+
+      match /questions/{questionId} {
+        allow read: if true;
+        allow create, update, delete: if isHost(sessionId);
+
+        match /votes/{voteId} {
+          allow read: if true;
+
+          allow create, update: if
+            request.resource.data.voterToken == voteId
+            && request.resource.data.sessionId == sessionId
+            && request.resource.data.questionId == questionId
+            && request.resource.data.answers is list
+            && request.resource.data.answers.size() > 0
+            && request.resource.data.answers.size() <= 6
+            && get(/databases/$(database)/documents/sessions/$(sessionId)/questions/$(questionId)).data.status == "open";
+
+          allow delete: if isHost(sessionId);
+        }
+      }
+    }
+  }
+}
+

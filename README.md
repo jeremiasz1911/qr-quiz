@@ -1,36 +1,173 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Live Polling App (Next.js + Firebase)
 
-## Getting Started
+Nowoczesna aplikacja webowa do głosowań na żywo podczas prezentacji, wykładów i eventów.
 
-First, run the development server:
+## 1. Architektura aplikacji
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**Stack:**
+- Next.js 16 (App Router, TypeScript)
+- Tailwind CSS
+- Firebase Auth (logowanie prowadzącego)
+- Firestore (sesje, pytania, głosy + realtime onSnapshot)
+- Recharts (wizualizacja wyników)
+- Framer Motion (animacje)
+- React Hook Form + Zod (formularze)
+- Lucide React (ikony)
+- qrcode.react (QR)
+
+**Warstwy:**
+- `src/app` — routing i widoki (public/admin/presentation)
+- `src/components` — UI i komponenty domenowe
+- `src/lib` — Firebase, walidacja, logika Firestore, utilsy
+- `src/hooks` — realtime i auth state
+- `src/types` — modele TypeScript
+
+## 2. Struktura folderów
+
+```txt
+src/
+  app/
+    page.tsx
+    admin/
+      login/page.tsx
+      dashboard/page.tsx
+    s/[sessionId]/
+      vote/page.tsx
+      present/page.tsx
+      history/page.tsx
+      q/[questionId]/page.tsx
+  components/
+    layout/page-shell.tsx
+    ui/{button,card,input,select,badge}.tsx
+    presenter/{question-form,question-list}.tsx
+    participant/vote-form.tsx
+    presentation/{qr-stage,results-chart}.tsx
+  hooks/{use-auth,use-session-data}.ts
+  lib/{firebase,firestore,results,utils,validation}.ts
+  types/domain.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 3. Model danych Firestore
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`sessions/{sessionId}`
+```ts
+{
+  title: string,
+  hostUid: string,
+  status: "draft" | "live" | "ended",
+  activeQuestionId: string | null,
+  presentationMode: "qr" | "results",
+  createdAt: number,
+  updatedAt: number
+}
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`sessions/{sessionId}/questions/{questionId}`
+```ts
+{
+  id: string,
+  sessionId: string,
+  title: string,
+  type: "single" | "multiple" | "yes_no" | "survey",
+  options: [{ id: string, label: string }],
+  status: "draft" | "open" | "closed",
+  allowRevoteUntilClosed: boolean,
+  createdAt: number,
+  updatedAt: number
+}
+```
 
-## Learn More
+`sessions/{sessionId}/questions/{questionId}/votes/{voterToken}`
+```ts
+{
+  id: string,
+  sessionId: string,
+  questionId: string,
+  voterToken: string,
+  answers: string[],
+  updatedAt: number
+}
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 4. Flow użytkownika i prowadzącego
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Prowadzący:**
+1. Loguje się przez Firebase Auth (Google)
+2. Tworzy pytania (single/multiple/yes-no/survey)
+3. Ustawia aktywne pytanie i otwiera głosowanie
+4. Pokazuje ekran prezentacyjny: tryb QR lub wyniki
+5. Zamyka głosowanie, resetuje wyniki, przegląda historię
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Uczestnik:**
+1. Skanuje QR / otwiera publiczny link
+2. Widzi pytanie i duże przyciski odpowiedzi
+3. Wysyła głos i dostaje potwierdzenie
+4. Jeśli pytanie zamknięte — widzi komunikat o zamknięciu
 
-## Deploy on Vercel
+## 5. Podstawowe widoki i komponenty
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `/` — landing
+- `/admin/login` — logowanie prowadzącego
+- `/admin/dashboard` — zarządzanie sesją, pytaniami, aktywnym głosowaniem
+- `/s/[sessionId]/vote` — publiczny widok uczestnika (aktywne pytanie)
+- `/s/[sessionId]/q/[questionId]` — publiczny link do konkretnego pytania
+- `/s/[sessionId]/present` — ekran prezentacyjny (QR/results, format: słupkowy/poziomy/liniowy/kołowy/donut/histogram)
+- `/s/[sessionId]/history` — historia pytań i wyników
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 6. Przykładowe reguły Firestore
+
+Plik: `firestore.rules`
+
+- publiczny odczyt sesji, pytań i głosów
+- tworzenie/edycja sesji i pytań tylko przez hosta (`hostUid == auth.uid`)
+- zapis głosu bez logowania, ale tylko:
+  - dla otwartego pytania
+  - do dokumentu `votes/{voterToken}`
+  - z poprawnym `sessionId`, `questionId`, `answers`
+
+## 7. Kod startowy projektu
+
+To repo zawiera gotowy starter MVP foundation:
+- czysty podział na public/admin/presentation
+- realtime updates (`onSnapshot`)
+- formy z RHF + Zod
+- wykresy wyników (bar + donut)
+- przełączane formaty wykresów (bar/horizontal bar/line/pie/donut/histogram)
+- QR i publiczny link pytania
+- obsługa otwierania/zamykania głosowań i resetu wyników
+
+## 8. Uruchomienie lokalnie
+
+1. Zainstaluj zależności:
+```bash
+npm install
+```
+2. Skopiuj env:
+```bash
+cp .env.example .env.local
+```
+3. Uzupełnij `.env.local` danymi projektu Firebase.
+4. Uruchom:
+```bash
+npm run dev
+```
+5. Otwórz `http://localhost:3000`
+
+## 9. Wdrożenie na Vercel
+
+1. Push repo do GitHub.
+2. Import projektu w Vercel.
+3. Dodaj wszystkie zmienne z `.env.example` jako Environment Variables.
+4. Build command: `npm run build`
+5. Output: domyślny dla Next.js.
+6. Po deployu ustaw reguły Firestore (`firestore.rules`) w Firebase Console lub przez Firebase CLI.
+
+## 10. Propozycje dalszej rozbudowy
+
+- role i ACL (kilku prowadzących na sesję)
+- timer odliczający do zamknięcia pytania
+- anonimowe segmenty uczestników (np. sala A/B)
+- eksport wyników CSV/PDF
+- ranking aktywności i quiz punktowany
+- websocket fallback + cache warstwy statystyk
+- dedykowany tryb fullscreen z pilotem klawiaturowym
