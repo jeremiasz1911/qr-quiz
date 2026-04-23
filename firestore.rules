@@ -9,6 +9,10 @@ service cloud.firestore {
       return hostUid == "katolik-public";
     }
 
+    function isPublicSession(sessionId) {
+      return sessionId == "katolik-public-session";
+    }
+
     function isHost(sessionId) {
       return isSignedIn()
         && (
@@ -24,12 +28,17 @@ service cloud.firestore {
         && (
           request.resource.data.hostUid == request.auth.uid
           || isPublicHostUid(request.resource.data.hostUid)
+          || isPublicSession(sessionId)
         );
-      allow update, delete: if isHost(sessionId);
+      allow update, delete: if
+        isHost(sessionId)
+        || (isSignedIn() && isPublicSession(sessionId));
 
       match /questions/{questionId} {
         allow read: if true;
-        allow create, update, delete: if isHost(sessionId);
+        allow create, update, delete: if
+          isHost(sessionId)
+          || (isSignedIn() && isPublicSession(sessionId));
 
         match /votes/{voteId} {
           allow read: if true;
@@ -43,7 +52,9 @@ service cloud.firestore {
             && request.resource.data.answers.size() <= 6
             && get(/databases/$(database)/documents/sessions/$(sessionId)/questions/$(questionId)).data.status == "open";
 
-          allow delete: if isHost(sessionId);
+          allow delete: if
+            isHost(sessionId)
+            || (isSignedIn() && isPublicSession(sessionId));
         }
       }
     }
