@@ -95,6 +95,7 @@ export default function AdminDashboardPage() {
 
   const baseUrl = useMemo(() => getBaseUrl(), []);
   const currentChartType: ResultsChartType = session?.resultsChartType ?? "bar";
+  const currentPresentationMode = session?.presentationMode ?? "qr";
   const publicActiveLink = useMemo(() => {
     if (!effectiveSessionId || !activeQuestion) return "";
     return `${baseUrl}/s/${effectiveSessionId}/q/${activeQuestion.id}`;
@@ -117,10 +118,16 @@ export default function AdminDashboardPage() {
             <p className="text-sm text-slate-300">Sesja: {session?.title ?? DEFAULT_SESSION_TITLE}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => void setPresentationMode(effectiveSessionId, "qr")}>
+            <Button
+              variant={currentPresentationMode === "qr" ? "default" : "secondary"}
+              onClick={() => void setPresentationMode(effectiveSessionId, "qr")}
+            >
               Tryb QR
             </Button>
-            <Button variant="secondary" onClick={() => void setPresentationMode(effectiveSessionId, "results")}>
+            <Button
+              variant={currentPresentationMode === "results" ? "default" : "secondary"}
+              onClick={() => void setPresentationMode(effectiveSessionId, "results")}
+            >
               Tryb wyników
             </Button>
             <Button variant="ghost" onClick={() => void logout()}>
@@ -170,7 +177,17 @@ export default function AdminDashboardPage() {
                   <p className="text-sm text-slate-300">
                     Status: <span className="font-medium text-slate-100">{activeQuestion.status}</span>
                   </p>
-                  <p className="mt-2 truncate text-sm text-blue-200">{publicActiveLink}</p>
+                  <p className="text-sm text-slate-300">
+                    Aktywny ekran prezentacji:{" "}
+                    <span className="font-medium text-slate-100">
+                      {currentPresentationMode === "qr" ? "Tryb QR (link + kod QR)" : "Tryb wyników"}
+                    </span>
+                  </p>
+                  <p className={`mt-2 truncate text-sm ${currentPresentationMode === "qr" ? "text-blue-200" : "text-slate-400"}`}>
+                    {currentPresentationMode === "qr"
+                      ? publicActiveLink
+                      : "W trybie wyników prezentacja pokazuje wykres zamiast kodu QR."}
+                  </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       variant="secondary"
