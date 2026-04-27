@@ -20,6 +20,7 @@ import {
 } from "recharts";
 import { FirebaseEnvGuard } from "@/components/layout/firebase-env-guard";
 import { PageShell } from "@/components/layout/page-shell";
+import { QrStage } from "@/components/presentation/qr-stage";
 import { LiveVotingStage } from "@/components/presentation/live-voting-stage";
 import { ResultsChart } from "@/components/presentation/results-chart";
 import { Button } from "@/components/ui/button";
@@ -223,46 +224,34 @@ export default function DebateFlowPage({
 
           <main className="min-h-0 flex-1">
             {slide === 1 && (
+              <QrStage title={`1. Głosowanie przed debatą — ${before.title}`} link={beforeLink} />
+            )}
+
+            {slide === 2 && (
               <LiveVotingStage
-                title={`1. Głosowanie przed debatą — ${before.title}`}
+                title={`2. Wyniki przed debatą — ${before.title}`}
                 link={beforeLink}
                 rows={beforeChartRows}
                 totalVotes={analysis.turnoutBefore}
                 chartType="donut"
-                subtitle="Głosowanie przed debatą"
+                subtitle="Wyniki na żywo"
               />
             )}
 
-            {slide === 2 && (
-              <div className="flex h-full min-h-0 flex-col gap-3 rounded-3xl border border-slate-700/70 bg-slate-950/70 p-4 backdrop-blur">
-                <div className="flex items-center gap-2 text-cyan-200">
-                  <BarChart3 className="h-5 w-5" />
-                  <p className="font-semibold">Wyniki przed debatą</p>
-                </div>
-                  <ResultsChart rows={beforeChartRows} totalVotes={analysis.turnoutBefore} chartType="donut" className="min-h-0 flex-1" />
-                </div>
-              )}
-
             {slide === 3 && (
+              <QrStage title={`3. Głosowanie po debacie — ${after.title}`} link={afterLink} />
+            )}
+
+            {slide === 4 && (
               <LiveVotingStage
-                title={`3. Głosowanie po debacie — ${after.title}`}
+                title={`4. Wyniki po debacie — ${after.title}`}
                 link={afterLink}
                 rows={afterChartRows}
                 totalVotes={analysis.turnoutAfter}
                 chartType="donut"
-                subtitle="Głosowanie po debacie"
+                subtitle="Wyniki na żywo"
               />
             )}
-
-            {slide === 4 && (
-              <div className="flex h-full min-h-0 flex-col gap-3 rounded-3xl border border-slate-700/70 bg-slate-950/70 p-4 backdrop-blur">
-                <div className="flex items-center gap-2 text-cyan-200">
-                  <BarChart3 className="h-5 w-5" />
-                  <p className="font-semibold">Wyniki po debacie</p>
-                </div>
-                  <ResultsChart rows={afterChartRows} totalVotes={analysis.turnoutAfter} chartType="donut" className="min-h-0 flex-1" />
-                </div>
-              )}
 
             {slide === 5 && (
               <Card className="flex h-full min-h-0 flex-col overflow-auto border-slate-700/70 bg-slate-950/70 p-5 backdrop-blur">
