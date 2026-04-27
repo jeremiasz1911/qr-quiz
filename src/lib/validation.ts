@@ -4,6 +4,7 @@ export const questionTypeSchema = z.enum([
   "single",
   "multiple",
   "yes_no",
+  "debate",
   "survey",
   "scale_1_5",
   "scale_1_10",
@@ -24,6 +25,13 @@ export const questionFormSchema = z
         code: z.ZodIssueCode.custom,
         path: ["options"],
         message: "Pytanie tak/nie musi mieć dokładnie 2 odpowiedzi.",
+      });
+    }
+    if (value.type === "debate" && value.options.length !== 3) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["options"],
+        message: "Debata musi mieć dokładnie 3 odpowiedzi.",
       });
     }
     if (value.type === "scale_1_5" && value.options.length !== 5) {

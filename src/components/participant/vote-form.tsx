@@ -14,6 +14,7 @@ export function VoteForm({ question, sessionId }: { question: Question; sessionI
   const [isSubmitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const isMultiple = question.type === "multiple";
+  const isDebate = question.type === "debate";
 
   const canSubmit = selected.length > 0;
 
@@ -52,7 +53,13 @@ export function VoteForm({ question, sessionId }: { question: Question; sessionI
     <Card className="p-5">
       <h1 className="mb-2 text-xl font-bold text-white">{question.title}</h1>
       <p className="mb-4 text-sm text-slate-300">
-        {locked ? "Głosowanie zamknięte" : isMultiple ? "Wybierz jedną lub więcej odpowiedzi" : "Wybierz jedną odpowiedź"}
+        {locked
+          ? "Głosowanie zamknięte"
+          : isDebate
+            ? "Debata: wybierz jedno stanowisko"
+            : isMultiple
+              ? "Wybierz jedną lub więcej odpowiedzi"
+              : "Wybierz jedną odpowiedź"}
       </p>
 
       <div className="space-y-3">

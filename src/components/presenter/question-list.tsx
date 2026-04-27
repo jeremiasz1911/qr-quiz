@@ -12,6 +12,18 @@ const statusMap: Record<Question["status"], string> = {
   closed: "Zamknięte",
 };
 
+const typeMap: Record<Question["type"], string> = {
+  single: "Pojedynczy wybór",
+  multiple: "Wielokrotny wybór",
+  yes_no: "Tak / Nie",
+  debate: "Debata",
+  survey: "Ankieta",
+  scale_1_5: "Skala 1-5",
+  scale_1_10: "Skala 1-10",
+  agreement: "Skala zgody",
+  nps_0_10: "NPS 0-10",
+};
+
 export function QuestionList({
   questions,
   activeQuestionId,
@@ -43,7 +55,9 @@ export function QuestionList({
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div>
                   <p className="font-medium text-slate-100">{question.title}</p>
-                  <p className="text-sm text-slate-400">{question.options.length} odpowiedzi</p>
+                  <p className="text-sm text-slate-400">
+                    {typeMap[question.type]} • {question.options.length} odpowiedzi
+                  </p>
                 </div>
                 <Badge className={isActive ? "border-blue-300/30 bg-blue-500/20 text-blue-100" : ""}>
                   {isActive ? "Aktywne" : statusMap[question.status]}
@@ -72,4 +86,3 @@ export function QuestionList({
     </Card>
   );
 }
-

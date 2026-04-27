@@ -2,6 +2,7 @@ export type QuestionType =
   | "single"
   | "multiple"
   | "yes_no"
+  | "debate"
   | "survey"
   | "scale_1_5"
   | "scale_1_10"

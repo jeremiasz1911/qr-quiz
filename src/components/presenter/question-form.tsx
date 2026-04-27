@@ -15,6 +15,7 @@ const typeOptions: { label: string; value: QuestionType }[] = [
   { label: "Jednokrotny wybór", value: "single" },
   { label: "Wielokrotny wybór", value: "multiple" },
   { label: "Tak / Nie", value: "yes_no" },
+  { label: "Debata (3 opcje)", value: "debate" },
   { label: "Ankieta (2-6 odpowiedzi)", value: "survey" },
   { label: "Skala 1-5", value: "scale_1_5" },
   { label: "Skala 1-10 (zgrupowana)", value: "scale_1_10" },
@@ -36,15 +37,22 @@ export function QuestionForm({ onCreate }: { onCreate: (values: QuestionFormValu
   const options = useWatch({ control: form.control, name: "options" }) ?? [];
   const selectedType = useWatch({ control: form.control, name: "type" });
   const isYesNo = selectedType === "yes_no";
+  const isDebate = selectedType === "debate";
   const isScale15 = selectedType === "scale_1_5";
   const isScale110 = selectedType === "scale_1_10";
   const isAgreement = selectedType === "agreement";
   const isNps = selectedType === "nps_0_10";
-  const isPresetType = isYesNo || isScale15 || isScale110 || isAgreement || isNps;
+  const isPresetType = isYesNo || isDebate || isScale15 || isScale110 || isAgreement || isNps;
 
   useEffect(() => {
     if (isYesNo) {
       form.setValue("options", ["Tak", "Nie"], { shouldDirty: true });
+      return;
+    }
+    if (isDebate) {
+      form.setValue("options", ["Zgadzam się z tezą", "Nie mam zdania", "Nie zgadzam się z tezą"], {
+        shouldDirty: true,
+      });
       return;
     }
     if (isScale15) {
@@ -64,7 +72,7 @@ export function QuestionForm({ onCreate }: { onCreate: (values: QuestionFormValu
     if (isNps) {
       form.setValue("options", ["0-1", "2-3", "4-5", "6-7", "8-9", "10"], { shouldDirty: true });
     }
-  }, [form, isAgreement, isNps, isScale110, isScale15, isYesNo]);
+  }, [form, isAgreement, isDebate, isNps, isScale110, isScale15, isYesNo]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     await onCreate(values);
