@@ -141,6 +141,7 @@ export async function createDebatePair(sessionId: string, statement: string) {
     options: sharedOptions,
     allowRevoteUntilClosed: true,
   });
+  await setQuestionVotingStatus(sessionId, beforeId, "open");
 
   const afterId = await createQuestion(sessionId, {
     title: `Po debacie — ${statement}`,
@@ -151,6 +152,7 @@ export async function createDebatePair(sessionId: string, statement: string) {
     options: sharedOptions,
     allowRevoteUntilClosed: true,
   });
+  await setQuestionVotingStatus(sessionId, afterId, "open");
 
   return { debateGroupId, beforeId, afterId };
 }
