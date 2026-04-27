@@ -50,7 +50,8 @@ export function VoteForm({ question, sessionId }: { question: Question; sessionI
   const disableOptions = locked || (submitted && !canRevote);
 
   return (
-    <Card className="p-5">
+    <Card className="h-full border-slate-700/70 bg-slate-950/80 p-5 backdrop-blur md:p-7">
+      <p className="mb-2 text-xs uppercase tracking-wide text-cyan-200">Publiczne głosowanie</p>
       <h1 className="mb-2 text-xl font-bold text-white">{question.title}</h1>
       <p className="mb-4 text-sm text-slate-300">
         {locked
@@ -70,7 +71,7 @@ export function VoteForm({ question, sessionId }: { question: Question; sessionI
               key={opt.id}
               type="button"
               onClick={() => toggle(opt.id)}
-              className={`w-full rounded-2xl border p-4 text-left text-base transition ${
+              className={`w-full rounded-3xl border p-5 text-left text-lg transition md:p-6 ${
                 isActive
                   ? "border-blue-300/50 bg-blue-500/20 text-blue-50"
                   : "border-slate-700 bg-slate-900 text-slate-100"

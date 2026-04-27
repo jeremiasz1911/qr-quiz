@@ -27,11 +27,11 @@ export default function QuestionVotePage({
 
   return (
     <FirebaseEnvGuard>
-      <PageShell className="max-w-xl py-8">
+      <PageShell className="min-h-[100dvh] max-w-none px-3 py-3 md:px-6 md:py-6">
         {loading && <p className="text-slate-300">Ładowanie pytania...</p>}
         {!loading && question && <VoteForm question={question} sessionId={sessionId} />}
         {!loading && !question && (
-          <p className="rounded-xl border border-slate-700 bg-slate-900 p-4 text-slate-300">
+          <p className="rounded-2xl border border-slate-700 bg-slate-900 p-4 text-slate-300">
             To pytanie nie istnieje lub zostało usunięte.
           </p>
         )}
