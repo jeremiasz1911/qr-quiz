@@ -16,6 +16,9 @@ export interface DebateAnalysis {
   commonVoters: number;
   changedVoters: number;
   unchangedVoters: number;
+  effectivenessPercent: number;
+  participationDelta: number;
+  participationDeltaPercent: number;
   turnoutBefore: number;
   turnoutAfter: number;
   thesisWon: boolean;
@@ -81,6 +84,11 @@ export function analyzeDebate(before: Question, after: Question, beforeVotes: Vo
 
   const commonVoters = changedVoters + unchangedVoters;
   const supportShift = afterRows.support.percentage - beforeRows.support.percentage;
+  const effectivenessPercent =
+    commonVoters === 0 ? 0 : Math.round((changedVoters / commonVoters) * 100);
+  const participationDelta = afterVotes.length - beforeVotes.length;
+  const participationDeltaPercent =
+    beforeVotes.length === 0 ? 0 : Math.round((participationDelta / beforeVotes.length) * 100);
   const thesisWon =
     afterRows.support.count > afterRows.opposition.count
       ? true
@@ -107,6 +115,9 @@ export function analyzeDebate(before: Question, after: Question, beforeVotes: Vo
     commonVoters,
     changedVoters,
     unchangedVoters,
+    effectivenessPercent,
+    participationDelta,
+    participationDeltaPercent,
     turnoutBefore: beforeVotes.length,
     turnoutAfter: afterVotes.length,
     thesisWon,

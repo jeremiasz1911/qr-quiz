@@ -349,6 +349,8 @@ export default function AdminDashboardPage() {
                           { step: 3, label: "QR 2" },
                           { step: 4, label: "Wyniki 2" },
                           { step: 5, label: "Analiza" },
+                          { step: 6, label: "Trend" },
+                          { step: 7, label: "Efekt" },
                         ].map((item) => (
                           <Link key={item.step} href={`/s/${effectiveSessionId}/debate/${debate.groupId}/${item.step}`}>
                             <Button variant="ghost" className="h-9 px-3">
