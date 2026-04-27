@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { use, useMemo } from "react";
 import { FirebaseEnvGuard } from "@/components/layout/firebase-env-guard";
 import { PageShell } from "@/components/layout/page-shell";
-import { QrStage } from "@/components/presentation/qr-stage";
+import { LiveVotingStage } from "@/components/presentation/live-voting-stage";
 import { ResultsChart } from "@/components/presentation/results-chart";
 import { Card } from "@/components/ui/card";
 import { useSessionData } from "@/hooks/use-session-data";
@@ -39,7 +39,13 @@ export default function PresentationPage({
       <PageShell className="h-[100dvh] w-[100dvw] max-w-none overflow-hidden px-4 py-4 md:px-6 md:py-5">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex h-full min-h-0 flex-col gap-3 md:gap-4">
           {session.presentationMode === "qr" ? (
-            <QrStage title={activeQuestion.title} link={publicLink} />
+            <LiveVotingStage
+              title={activeQuestion.title}
+              link={publicLink}
+              rows={results}
+              totalVotes={votes.length}
+              chartType={session.resultsChartType ?? "bar"}
+            />
           ) : (
             <>
               <h1 className="shrink-0 text-center text-2xl font-bold leading-tight text-white md:text-3xl lg:text-4xl">
