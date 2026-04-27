@@ -330,16 +330,33 @@ export default function AdminDashboardPage() {
                 <h2 className="text-lg font-semibold text-white">Debaty</h2>
                 <div className="space-y-2">
                   {debatePairs.map((debate) => (
-                    <div key={debate.groupId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-                      <div>
+                    <div key={debate.groupId} className="space-y-3 rounded-xl border border-slate-700 bg-slate-950/60 p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
                         <p className="font-medium text-slate-100">{debate.topic}</p>
                         <p className="text-sm text-slate-400">
                           {debate.beforeTitle} • {debate.afterTitle}
                         </p>
+                        </div>
+                        <Link href={`/s/${effectiveSessionId}/debate/${debate.groupId}`}>
+                          <Button variant="secondary">Otwórz debatę</Button>
+                        </Link>
                       </div>
-                      <Link href={`/s/${effectiveSessionId}/debate/${debate.groupId}`}>
-                        <Button variant="secondary">Otwórz debatę</Button>
-                      </Link>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { step: 1, label: "QR 1" },
+                          { step: 2, label: "Wyniki 1" },
+                          { step: 3, label: "QR 2" },
+                          { step: 4, label: "Wyniki 2" },
+                          { step: 5, label: "Analiza" },
+                        ].map((item) => (
+                          <Link key={item.step} href={`/s/${effectiveSessionId}/debate/${debate.groupId}/${item.step}`}>
+                            <Button variant="ghost" className="h-9 px-3">
+                              {item.label}
+                            </Button>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -28,6 +28,8 @@ export interface DebateAnalysis {
   oppositionBefore: QuestionResultRow;
   oppositionAfter: QuestionResultRow;
   summary: string;
+  discussionWorthIt: boolean;
+  discussionLabel: string;
 }
 
 function serializeAnswers(answers: string[]) {
@@ -97,6 +99,8 @@ export function analyzeDebate(before: Question, after: Question, beforeVotes: Vo
         : changedVoters >= Math.max(3, Math.ceil(commonVoters * 0.25))
           ? "Warto rozmawiać — sporo osób zmieniło zdanie po debacie."
           : "Debata poruszyła część uczestników, ale zmiana była umiarkowana.";
+  const discussionWorthIt = changedVoters >= Math.max(2, Math.ceil(commonVoters * 0.2));
+  const discussionLabel = discussionWorthIt ? "Warto rozmawiać" : "Zmiana była niewielka";
 
   return {
     comparisonRows,
@@ -115,5 +119,7 @@ export function analyzeDebate(before: Question, after: Question, beforeVotes: Vo
     oppositionBefore: beforeRows.opposition,
     oppositionAfter: afterRows.opposition,
     summary,
+    discussionWorthIt,
+    discussionLabel,
   };
 }

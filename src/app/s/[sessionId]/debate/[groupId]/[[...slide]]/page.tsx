@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { BarChart3, ChevronLeft, ChevronRight, QrCode, Sparkles } from "lucide-react";
+import { BarChart3, Check, Copy, ChevronLeft, ChevronRight, QrCode, Sparkles } from "lucide-react";
 import { FirebaseEnvGuard } from "@/components/layout/firebase-env-guard";
 import { PageShell } from "@/components/layout/page-shell";
 import { QrStage } from "@/components/presentation/qr-stage";
@@ -51,6 +51,8 @@ export default function DebateFlowPage({
   );
   const before = debateQuestions.find((question) => question.debatePhase === "before") ?? null;
   const after = debateQuestions.find((question) => question.debatePhase === "after") ?? null;
+  const currentLink = `${baseUrl}/s/${sessionId}/debate/${groupId}/${slide}`;
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!hasFirebaseEnv() || !before || !after) {
@@ -69,14 +71,9 @@ export default function DebateFlowPage({
     })();
   }, [after, before, sessionId]);
 
-  const beforeVotes = useMemo(() => (before ? votesByQuestion[before.id] ?? [] : []), [before, votesByQuestion]);
-  const afterVotes = useMemo(() => (after ? votesByQuestion[after.id] ?? [] : []), [after, votesByQuestion]);
-  const analysis = useMemo(() => {
-    if (!before || !after) {
-      return null;
-    }
-    return analyzeDebate(before, after, beforeVotes, afterVotes);
-  }, [after, before, beforeVotes, afterVotes]);
+  const beforeVotes = before ? votesByQuestion[before.id] ?? [] : [];
+  const afterVotes = after ? votesByQuestion[after.id] ?? [] : [];
+  const analysis = before && after ? analyzeDebate(before, after, beforeVotes, afterVotes) : null;
 
   if (!before || !after || !analysis) {
     return (
@@ -118,11 +115,41 @@ export default function DebateFlowPage({
           </div>
         </div>
 
+        <Card className="mb-3 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-white">Przebieg debaty</p>
+              <p className="text-sm text-slate-300">
+                1 QR przed • 2 wyniki przed • 3 QR po • 4 wyniki po • 5 analiza końcowa
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(currentLink);
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 1500);
+                }}
+              >
+                {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                Kopiuj link slajdu
+              </Button>
+            </div>
+          </div>
+        </Card>
+
         <div className="mb-3 flex flex-wrap gap-2">
-          {[1, 2, 3, 4, 5].map((step) => (
-            <Link key={step} href={slideHref(step)}>
-              <Button variant={slide === step ? "default" : "secondary"} className="h-8 w-8 px-0">
-                {step}
+          {[
+            { step: 1, label: "QR 1" },
+            { step: 2, label: "Wyniki 1" },
+            { step: 3, label: "QR 2" },
+            { step: 4, label: "Wyniki 2" },
+            { step: 5, label: "Analiza" },
+          ].map((item) => (
+            <Link key={item.step} href={slideHref(item.step)}>
+              <Button variant={slide === item.step ? "default" : "secondary"} className="gap-2">
+                {item.label}
               </Button>
             </Link>
           ))}
@@ -185,6 +212,7 @@ export default function DebateFlowPage({
                   <p className="text-2xl font-bold text-white">
                     {analysis.thesisOutcome === "win" ? "Teza wygrała" : analysis.thesisOutcome === "loss" ? "Teza nie wygrała" : "Remis"}
                   </p>
+                  <p className="text-sm font-semibold text-cyan-200">{analysis.discussionLabel}</p>
                   <p className="text-sm text-slate-300">
                     Zmiana poparcia: <span className="font-semibold text-cyan-200">{analysis.thesisShift > 0 ? "+" : ""}{analysis.thesisShift}%</span>
                   </p>
