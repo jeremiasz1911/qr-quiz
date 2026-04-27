@@ -100,6 +100,40 @@ export default function AdminDashboardPage() {
   const baseUrl = useMemo(() => getBaseUrl(), []);
   const currentChartType: ResultsChartType = session?.resultsChartType ?? "bar";
   const currentPresentationMode = session?.presentationMode ?? "qr";
+  const debatePairs = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        topic: string;
+        beforeTitle: string;
+        afterTitle: string;
+      }
+    >();
+
+    questions.forEach((question) => {
+      if (!question.debateGroupId || !question.debatePhase) {
+        return;
+      }
+      const current = groups.get(question.debateGroupId) ?? {
+        topic: question.debateTopic ?? question.title,
+        beforeTitle: "",
+        afterTitle: "",
+      };
+      if (question.debatePhase === "before") {
+        current.beforeTitle = question.title;
+      }
+      if (question.debatePhase === "after") {
+        current.afterTitle = question.title;
+      }
+      current.topic = question.debateTopic ?? current.topic;
+      groups.set(question.debateGroupId, current);
+    });
+
+    return [...groups.entries()].map(([groupId, value]) => ({
+      groupId,
+      ...value,
+    }));
+  }, [questions]);
   const publicActiveLink = useMemo(() => {
     if (!effectiveSessionId || !activeQuestion) return "";
     return `${baseUrl}/s/${effectiveSessionId}/q/${activeQuestion.id}`;
@@ -290,6 +324,27 @@ export default function AdminDashboardPage() {
                 {results.map((row) => `${row.label}: ${row.count} (${row.percentage}%)`).join(" • ")}
               </p>
             </Card>
+
+            {debatePairs.length > 0 && (
+              <Card className="space-y-3 p-5">
+                <h2 className="text-lg font-semibold text-white">Debaty</h2>
+                <div className="space-y-2">
+                  {debatePairs.map((debate) => (
+                    <div key={debate.groupId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950/60 p-3">
+                      <div>
+                        <p className="font-medium text-slate-100">{debate.topic}</p>
+                        <p className="text-sm text-slate-400">
+                          {debate.beforeTitle} • {debate.afterTitle}
+                        </p>
+                      </div>
+                      <Link href={`/s/${effectiveSessionId}/debate/${debate.groupId}`}>
+                        <Button variant="secondary">Otwórz debatę</Button>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
 
             <QuestionList
               questions={questions}
