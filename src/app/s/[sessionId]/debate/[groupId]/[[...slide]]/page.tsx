@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { use, useEffect, useMemo, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
 import { BarChart3, Check, Copy, ChevronLeft, ChevronRight, QrCode, Sparkles } from "lucide-react";
 import {
   Bar,
@@ -21,13 +20,13 @@ import {
 } from "recharts";
 import { FirebaseEnvGuard } from "@/components/layout/firebase-env-guard";
 import { PageShell } from "@/components/layout/page-shell";
-import { QrStage } from "@/components/presentation/qr-stage";
+import { LiveVotingStage } from "@/components/presentation/live-voting-stage";
 import { ResultsChart } from "@/components/presentation/results-chart";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSessionData } from "@/hooks/use-session-data";
 import { analyzeDebate } from "@/lib/debate";
-import { getDb, hasFirebaseEnv } from "@/lib/firebase";
+import { subscribeVotes } from "@/lib/firestore";
 import { getBaseUrl } from "@/lib/utils";
 import type { Vote } from "@/types/domain";
 
@@ -73,25 +72,40 @@ export default function DebateFlowPage({
   const currentLink = `${baseUrl}/s/${sessionId}/debate/${groupId}/${slide}`;
 
   useEffect(() => {
-    if (!hasFirebaseEnv() || !before || !after) {
+    if (!before || !after) {
       return;
     }
-    void (async () => {
-      const db = getDb();
-      const entries = await Promise.all(
-        [before, after].map(async (question) => {
-          const snap = await getDocs(collection(db, "sessions", sessionId, "questions", question.id, "votes"));
-          const votes = snap.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Vote, "id">) }));
-          return [question.id, votes] as const;
-        })
-      );
-      setVotesByQuestion(Object.fromEntries(entries));
-    })();
+    const unsubBefore = subscribeVotes(sessionId, before.id, (votes) =>
+      setVotesByQuestion((current) => ({ ...current, [before.id]: votes }))
+    );
+    const unsubAfter = subscribeVotes(sessionId, after.id, (votes) =>
+      setVotesByQuestion((current) => ({ ...current, [after.id]: votes }))
+    );
+    return () => {
+      unsubBefore();
+      unsubAfter();
+    };
   }, [after, before, sessionId]);
 
   const beforeVotes = before ? votesByQuestion[before.id] ?? [] : [];
   const afterVotes = after ? votesByQuestion[after.id] ?? [] : [];
   const analysis = before && after ? analyzeDebate(before, after, beforeVotes, afterVotes) : null;
+  const beforeChartRows = analysis
+    ? analysis.comparisonRows.map((row) => ({
+        optionId: row.label,
+        label: row.label,
+        count: row.beforeCount,
+        percentage: row.beforePercentage,
+      }))
+    : [];
+  const afterChartRows = analysis
+    ? analysis.comparisonRows.map((row) => ({
+        optionId: row.label,
+        label: row.label,
+        count: row.afterCount,
+        percentage: row.afterPercentage,
+      }))
+    : [];
   const trendData = before && after
     ? [
         {
@@ -209,9 +223,13 @@ export default function DebateFlowPage({
 
           <main className="min-h-0 flex-1">
             {slide === 1 && (
-              <QrStage
+              <LiveVotingStage
                 title={`1. Głosowanie przed debatą — ${before.title}`}
                 link={beforeLink}
+                rows={beforeChartRows}
+                totalVotes={analysis.turnoutBefore}
+                chartType="donut"
+                subtitle="Głosowanie przed debatą"
               />
             )}
 
@@ -221,22 +239,19 @@ export default function DebateFlowPage({
                   <BarChart3 className="h-5 w-5" />
                   <p className="font-semibold">Wyniki przed debatą</p>
                 </div>
-                <ResultsChart
-                  rows={analysis.comparisonRows.map((row) => ({
-                    optionId: row.label,
-                    label: row.label,
-                    count: row.beforeCount,
-                    percentage: row.beforePercentage,
-                  }))}
-                  totalVotes={analysis.turnoutBefore}
-                  chartType="donut"
-                  className="min-h-0 flex-1"
-                />
-              </div>
-            )}
+                  <ResultsChart rows={beforeChartRows} totalVotes={analysis.turnoutBefore} chartType="donut" className="min-h-0 flex-1" />
+                </div>
+              )}
 
             {slide === 3 && (
-              <QrStage title={`3. Głosowanie po debacie — ${after.title}`} link={afterLink} />
+              <LiveVotingStage
+                title={`3. Głosowanie po debacie — ${after.title}`}
+                link={afterLink}
+                rows={afterChartRows}
+                totalVotes={analysis.turnoutAfter}
+                chartType="donut"
+                subtitle="Głosowanie po debacie"
+              />
             )}
 
             {slide === 4 && (
@@ -245,19 +260,9 @@ export default function DebateFlowPage({
                   <BarChart3 className="h-5 w-5" />
                   <p className="font-semibold">Wyniki po debacie</p>
                 </div>
-                <ResultsChart
-                  rows={analysis.comparisonRows.map((row) => ({
-                    optionId: row.label,
-                    label: row.label,
-                    count: row.afterCount,
-                    percentage: row.afterPercentage,
-                  }))}
-                  totalVotes={analysis.turnoutAfter}
-                  chartType="donut"
-                  className="min-h-0 flex-1"
-                />
-              </div>
-            )}
+                  <ResultsChart rows={afterChartRows} totalVotes={analysis.turnoutAfter} chartType="donut" className="min-h-0 flex-1" />
+                </div>
+              )}
 
             {slide === 5 && (
               <Card className="flex h-full min-h-0 flex-col overflow-auto border-slate-700/70 bg-slate-950/70 p-5 backdrop-blur">
