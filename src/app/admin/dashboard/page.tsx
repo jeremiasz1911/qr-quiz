@@ -15,6 +15,7 @@ import { QuestionList } from "@/components/presenter/question-list";
 import { useSessionData } from "@/hooks/use-session-data";
 import {
   createQuestion,
+  createDebatePair,
   createSession,
   ensurePublicSession,
   PUBLIC_HOST_UID,
@@ -37,6 +38,8 @@ export default function AdminDashboardPage() {
   const [sessionId, setSessionId] = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem("live-poll-session-id") : null
   );
+  const [debateStatement, setDebateStatement] = useState("");
+  const [debateBusy, setDebateBusy] = useState(false);
   const effectiveSessionId = user?.isAnonymous ? PUBLIC_SESSION_ID : sessionId;
   const { session, questions, activeQuestion, votes, results } = useSessionData(effectiveSessionId ?? "");
 
@@ -160,7 +163,7 @@ export default function AdminDashboardPage() {
         </Card>
 
         <div className="grid gap-4 lg:grid-cols-5">
-          <div className="lg:col-span-2">
+          <div className="space-y-4 lg:col-span-2">
             <QuestionForm
               onCreate={async (values) => {
                 try {
@@ -176,6 +179,47 @@ export default function AdminDashboardPage() {
                 }
               }}
             />
+
+            <Card className="p-5">
+              <h2 className="text-lg font-semibold text-white">Debata QR (2 pytania)</h2>
+              <p className="mt-2 text-sm text-slate-300">
+                Utworzy parę pytań: przed debatą i po debacie, z tymi samymi odpowiedziami.
+              </p>
+              <textarea
+                value={debateStatement}
+                onChange={(event) => setDebateStatement(event.target.value)}
+                placeholder="Np. Obowiązek szczepień jest niezbędny dla ochrony zdrowia publicznego i zapobiegania epidemiom."
+                className="mt-4 min-h-28 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-500"
+              />
+              <Button
+                className="mt-4 w-full"
+                disabled={debateBusy || debateStatement.trim().length < 10}
+                onClick={async () => {
+                  const statement = debateStatement.trim();
+                  if (statement.length < 10) {
+                    return;
+                  }
+                  setDebateBusy(true);
+                  try {
+                    await createDebatePair(effectiveSessionId, statement);
+                    setDebateStatement("");
+                  } catch (error) {
+                    if (!(error instanceof FirebaseError) || error.code !== "permission-denied" || user.isAnonymous) {
+                      throw error;
+                    }
+                    const newSessionId = await createSession(user.uid, DEFAULT_SESSION_TITLE);
+                    setSessionId(newSessionId);
+                    localStorage.setItem("live-poll-session-id", newSessionId);
+                    await createDebatePair(newSessionId, statement);
+                    setDebateStatement("");
+                  } finally {
+                    setDebateBusy(false);
+                  }
+                }}
+              >
+                {debateBusy ? "Tworzę debatę..." : "Utwórz debatę"}
+              </Button>
+            </Card>
           </div>
 
           <div className="space-y-4 lg:col-span-3">

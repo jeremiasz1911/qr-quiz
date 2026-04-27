@@ -9,6 +9,8 @@ export type QuestionType =
   | "agreement"
   | "nps_0_10";
 
+export type DebatePhase = "before" | "after";
+
 export type SessionStatus = "draft" | "live" | "ended";
 export type QuestionStatus = "draft" | "open" | "closed";
 export type PresentationMode = "qr" | "results";
@@ -35,6 +37,9 @@ export interface Question {
   id: string;
   sessionId: string;
   title: string;
+  debateTopic: string | null;
+  debateGroupId: string | null;
+  debatePhase: DebatePhase | null;
   type: QuestionType;
   options: QuestionOption[];
   status: QuestionStatus;

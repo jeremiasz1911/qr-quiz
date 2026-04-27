@@ -15,7 +15,15 @@ import {
 } from "firebase/firestore";
 import { getDb, hasFirebaseEnv } from "@/lib/firebase";
 import { generateId, nowTs } from "@/lib/utils";
-import type { PresentationMode, Question, QuestionType, ResultsChartType, Session, Vote } from "@/types/domain";
+import type {
+  DebatePhase,
+  PresentationMode,
+  Question,
+  QuestionType,
+  ResultsChartType,
+  Session,
+  Vote,
+} from "@/types/domain";
 
 export const PUBLIC_HOST_UID = "katolik-public";
 export const PUBLIC_SESSION_ID = "katolik-public-session";
@@ -87,6 +95,9 @@ export async function createQuestion(
   sessionId: string,
   payload: {
     title: string;
+    debateTopic?: string | null;
+    debateGroupId?: string | null;
+    debatePhase?: DebatePhase | null;
     type: QuestionType;
     options: string[];
     allowRevoteUntilClosed: boolean;
@@ -98,6 +109,9 @@ export async function createQuestion(
     id: questionId,
     sessionId,
     title: payload.title,
+    debateTopic: payload.debateTopic ?? null,
+    debateGroupId: payload.debateGroupId ?? null,
+    debatePhase: payload.debatePhase ?? null,
     type: payload.type,
     options: payload.options.map((label, i) => ({ id: `opt_${i + 1}`, label })),
     status: "draft",
@@ -108,6 +122,37 @@ export async function createQuestion(
     updatedAtServer: serverTimestamp(),
   });
   return questionId;
+}
+
+export async function createDebatePair(sessionId: string, statement: string) {
+  const debateGroupId = generateId("debate");
+  const sharedOptions = [
+    "Zgadzam się z tezą",
+    "Nie mam zdania",
+    "Nie zgadzam się z tezą",
+  ];
+
+  const beforeId = await createQuestion(sessionId, {
+    title: `Przed debatą — ${statement}`,
+    debateTopic: statement,
+    debateGroupId,
+    debatePhase: "before",
+    type: "debate",
+    options: sharedOptions,
+    allowRevoteUntilClosed: true,
+  });
+
+  const afterId = await createQuestion(sessionId, {
+    title: `Po debacie — ${statement}`,
+    debateTopic: statement,
+    debateGroupId,
+    debatePhase: "after",
+    type: "debate",
+    options: sharedOptions,
+    allowRevoteUntilClosed: true,
+  });
+
+  return { debateGroupId, beforeId, afterId };
 }
 
 export async function setActiveQuestion(sessionId: string, questionId: string) {

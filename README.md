@@ -135,6 +135,7 @@ To repo zawiera gotowy starter MVP foundation:
 - wykresy wyników (bar + donut)
 - przełączane formaty wykresów (bar/horizontal bar/line/pie/donut/histogram)
 - QR i publiczny link pytania
+- debaty QR w parach pytań przed/po z tabelą porównawczą wyników
 - obsługa otwierania/zamykania głosowań i resetu wyników
 
 ## 8. Uruchomienie lokalnie

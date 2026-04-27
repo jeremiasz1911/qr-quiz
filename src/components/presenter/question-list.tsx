@@ -24,6 +24,11 @@ const typeMap: Record<Question["type"], string> = {
   nps_0_10: "NPS 0-10",
 };
 
+const debatePhaseMap: Record<NonNullable<Question["debatePhase"]>, string> = {
+  before: "Przed debatą",
+  after: "Po debacie",
+};
+
 export function QuestionList({
   questions,
   activeQuestionId,
@@ -58,6 +63,11 @@ export function QuestionList({
                   <p className="text-sm text-slate-400">
                     {typeMap[question.type]} • {question.options.length} odpowiedzi
                   </p>
+                  {question.debateGroupId && question.debatePhase && (
+                    <p className="text-xs uppercase tracking-wide text-cyan-200">
+                      Debata • {debatePhaseMap[question.debatePhase]}
+                    </p>
+                  )}
                 </div>
                 <Badge className={isActive ? "border-blue-300/30 bg-blue-500/20 text-blue-100" : ""}>
                   {isActive ? "Aktywne" : statusMap[question.status]}
