@@ -162,7 +162,13 @@ npm run dev
 4. Build command: `npm run build`
 5. Output: domyślny dla Next.js.
 6. W Firebase Auth włącz provider **Anonymous** (dla przycisku `Logowanie przez Katolik`).
-7. Po deployu ustaw reguły Firestore (`firestore.rules`) w Firebase Console lub przez Firebase CLI.
+7. (Opcjonalnie, zamiast Anonymous) Można użyć jednego stałego konta "Katolik" — w tym celu:
+   - Utwórz Service Account w Firebase Console -> Project Settings -> Service Accounts
+   - Skopiuj JSON klucza i dodaj go jako zmienną środowiskową `FIREBASE_SERVICE_ACCOUNT` w Vercel (wartość JSON jako string).
+   - Upewnij się, że `NEXT_PUBLIC_FIREBASE_PROJECT_ID` jest ustawione w Vercel.
+   - Aplikacja udostępnia endpoint `/api/katolik-token` który tworzy token niestandardowy dla wspólnego UID `katolik-public`.
+   - Klient wywołuje endpoint i loguje się przez `signInWithCustomToken`, co powoduje, że wszyscy logują się na to samo konto.
+8. Po deployu ustaw reguły Firestore (`firestore.rules`) w Firebase Console lub przez Firebase CLI.
 
 ## 10. Propozycje dalszej rozbudowy
 

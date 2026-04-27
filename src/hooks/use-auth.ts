@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import {
   onAuthStateChanged,
-  signInAnonymously,
   signInWithPopup,
+  signInWithCustomToken,
+  // signInAnonymously,
   GoogleAuthProvider,
   signOut,
   User,
@@ -40,8 +41,15 @@ export function useAuth() {
     if (!hasFirebaseEnv()) {
       return;
     }
+    const resp = await fetch('/api/katolik-token', { method: 'POST' });
+    if (!resp.ok) {
+      throw new Error('Failed to get katolik token');
+    }
+    const data = await resp.json();
+    const token = data.token;
+    if (!token) throw new Error('No token returned');
     const auth = getFirebaseAuth();
-    await signInAnonymously(auth);
+    await signInWithCustomToken(auth, token);
   };
 
   const logout = async () => {
