@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useMemo, useState } from "react";
-import { BarChart3, Check, Copy, ChevronLeft, ChevronRight, QrCode, Sparkles } from "lucide-react";
+import { BarChart3, Check, Copy, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -151,78 +151,40 @@ export default function DebateFlowPage({
   const slideHref = (nextSlide: number) => `/s/${sessionId}/debate/${groupId}/${nextSlide}`;
   const title = before.debateTopic ?? before.title;
 
-  const slideChips = [
-    { step: 1, label: "QR 1" },
-    { step: 2, label: "Wyniki 1" },
-    { step: 3, label: "QR 2" },
-    { step: 4, label: "Wyniki 2" },
-    { step: 5, label: "Analiza" },
-    { step: 6, label: "Trend" },
-    { step: 7, label: "Efekt" },
-  ];
-
   return (
     <FirebaseEnvGuard>
       <PageShell className="relative h-[100dvh] w-[100dvw] max-w-none overflow-hidden p-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(124,58,237,0.15),transparent_38%),linear-gradient(180deg,rgba(2,6,23,0.92),rgba(15,23,42,0.98))]" />
-        <div className="absolute inset-0 flex min-h-0 flex-col gap-3 p-3 md:p-5">
-          <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-700/70 bg-slate-950/70 px-4 py-3 backdrop-blur">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-cyan-200">Debata QR</p>
-              <h1 className="text-lg font-bold text-white md:text-2xl">{title}</h1>
-              <p className="text-sm text-slate-300">Slajd {slide}/7</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href={slide > 1 ? slideHref(slide - 1) : slideHref(7)}>
-                <Button variant="secondary">
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Poprzedni
-                </Button>
-              </Link>
-              <Link href={slide < 7 ? slideHref(slide + 1) : slideHref(1)}>
-                <Button>
-                  Następny
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </header>
-
-          <Card className="border-slate-700/70 bg-slate-950/70 p-4 backdrop-blur">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-white">Przebieg debaty</p>
-                <p className="text-sm text-slate-300">
-                  1 QR przed • 2 wyniki przed • 3 QR po • 4 wyniki po • 5 analiza • 6 trend • 7 efekt
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(currentLink);
-                    setCopied(true);
-                    window.setTimeout(() => setCopied(false), 1500);
-                  }}
-                >
-                  {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                  Kopiuj link slajdu
-                </Button>
-              </div>
-            </div>
-          </Card>
-
-          <div className="flex flex-wrap gap-2">
-            {slideChips.map((item) => (
-              <Link key={item.step} href={slideHref(item.step)}>
-                <Button variant={slide === item.step ? "default" : "secondary"} className="gap-2">
-                  {item.label}
-                </Button>
-              </Link>
-            ))}
+        <div className="absolute inset-0 flex min-h-0 flex-col p-3 md:p-5">
+          <div className="pointer-events-none absolute left-4 top-4 z-20 rounded-full border border-slate-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold tracking-wide text-slate-200 backdrop-blur">
+            {title}
+          </div>
+          <div className="pointer-events-auto absolute right-4 top-4 z-20 flex gap-2">
+            <Button
+              variant="secondary"
+              className="h-10 px-3"
+              onClick={async () => {
+                await navigator.clipboard.writeText(currentLink);
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 1500);
+              }}
+            >
+              {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+              Kopiuj
+            </Button>
+            <Link href={slide > 1 ? slideHref(slide - 1) : slideHref(7)}>
+              <Button variant="secondary" className="h-10 px-3">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href={slide < 7 ? slideHref(slide + 1) : slideHref(1)}>
+              <Button className="h-10 px-3">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
 
-          <main className="min-h-0 flex-1">
+          <main className="min-h-0 flex-1 pt-0">
             {slide === 1 && (
               <QrStage title={`1. Głosowanie przed debatą — ${before.title}`} link={beforeLink} />
             )}
@@ -234,7 +196,6 @@ export default function DebateFlowPage({
                 rows={beforeChartRows}
                 totalVotes={analysis.turnoutBefore}
                 chartType="donut"
-                subtitle="Wyniki na żywo"
               />
             )}
 
@@ -249,7 +210,6 @@ export default function DebateFlowPage({
                 rows={afterChartRows}
                 totalVotes={analysis.turnoutAfter}
                 chartType="donut"
-                subtitle="Wyniki na żywo"
               />
             )}
 
@@ -327,16 +287,6 @@ export default function DebateFlowPage({
                   </table>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {slideChips.map((item) => (
-                    <Link key={item.step} href={slideHref(item.step)}>
-                      <Button variant="secondary">
-                        <QrCode className="mr-2 h-4 w-4" />
-                        {item.label}
-                      </Button>
-                    </Link>
-                  ))}
-                </div>
               </Card>
             )}
 

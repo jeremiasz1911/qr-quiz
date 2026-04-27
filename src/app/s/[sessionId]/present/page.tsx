@@ -45,7 +45,6 @@ export default function PresentationPage({
               rows={results}
               totalVotes={votes.length}
               chartType={session.resultsChartType ?? "bar"}
-              subtitle="Głosowanie + wyniki na bieżąco"
             />
           ) : (
             <>
